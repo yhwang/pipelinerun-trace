@@ -1,0 +1,21 @@
+{
+  "name": "pipelinerun_trace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "run": "node build/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@kubernetes/client-node": "^0.16.3",
+    "yargs": "^17.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.6.2",
+    "@types/node": "^17.0.23",
+    "@types/yargs": "^17.0.9"
+  }
+}
