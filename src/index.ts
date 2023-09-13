@@ -14,13 +14,16 @@ const CATInitContainer  = 'InitContainer';
 const CATPodEvent       = 'PodEvent';
 const OffSetStartTime   = false;
 const IncludePodEvents  = false;
+const NameSpace         = 'kubeflow'
 
 var padding = FixedElapseTime;
+var namespace = NameSpace;
 
 type Argv = {
     pipelinerun?: string;
     filename?: string;
     padding?: string;
+    namespace?: string;
 };
 
 type PipelineRunSpec = {
@@ -126,12 +129,12 @@ function getK8sEventClient() : CoreV1Api {
 }
 
 async function getPodEvents(client: CoreV1Api, podname: string): Promise<CoreV1EventList> {
-    const res = await client.listNamespacedEvent('ds', undefined, undefined, undefined, `involvedObject.name=${podname}`)
+    const res = await client.listNamespacedEvent(namespace, undefined, undefined, undefined, `involvedObject.name=${podname}`)
     return res.body
 }
 
 async function getPodStatus(client: CoreV1Api, podname: string): Promise<V1Pod> {
-    const res = await client.readNamespacedPodStatus(podname, 'ds');
+    const res = await client.readNamespacedPodStatus(podname, namespace);
     return res.body
 }
 
@@ -328,13 +331,13 @@ function elapse(start: Date, end: Date) : number {
 }
 
 async function getPipelineRun(kClient: CustomObjectsApi, name: string): Promise<PipelineRun|undefined> {
-    const res = await kClient.getNamespacedCustomObject('tekton.dev', 'v1beta1', 'ds','pipelineruns', name);
+    const res = await kClient.getNamespacedCustomObject('tekton.dev', 'v1beta1', namespace,'pipelineruns', name);
     const pipelinerun = (res.body as PipelineRun);
     return await Promise.resolve(pipelinerun);
 }
 
 async function getPipelineRuns(kClient: CustomObjectsApi): Promise<PipelineRun[]|undefined> {
-    const res = await kClient.listNamespacedCustomObject('tekton.dev', 'v1beta1', 'ds', 'pipelineruns');
+    const res = await kClient.listNamespacedCustomObject('tekton.dev', 'v1beta1', namespace, 'pipelineruns');
     const pipelineruns = (res.body as PipelineRunList).items as PipelineRun[];
     return await Promise.resolve(pipelineruns);
 }
@@ -362,7 +365,8 @@ function main() {
     .usage('Usage: $0 --pipelinerun [pipelinerun] --filename [file] --padding [number]')
     .describe('pipelinerun', 'pipelinerun name')
     .describe('filename', 'pipelinerun json file')
-    .describe('padding', 'add mS for those events have the same start and end times. default is 1000000 mS (1 second)');
+    .describe('padding', 'add mS for those events have the same start and end times. default is 1000000 mS (1 second)')
+    .describe('namespace', 'namespace for the pipelinerun');
     
     const argv = yargv.argv as Argv;
     
@@ -373,6 +377,11 @@ function main() {
     
     if (argv.padding !=undefined) {
         padding = parseInt(argv.padding);
+    }
+
+    if (argv.namespace != undefined) {
+        // for filename case, maybe get the namespace from the pipelinerun json
+        namespace = argv.namespace;
     }
 
     run(argv)
